@@ -1,17 +1,14 @@
-import React from 'react'
-import { BrowserRouter as Router, Routes, Route, BrowserRouter} from 'react-router-dom'
-import Home from './pages/Home/Home'
-import AddBook from './pages/Book/AddBook'
+import React, { useState } from 'react'
 
 function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path='/' element={<Home />} />
-        <Route path='/addbook' element={<AddBook />} />
-      </Routes>
-    </BrowserRouter>
-  )
+  const [count, setCount] = useState(0);
+      return (
+            <div>
+                  <p>You clicked {count} times</p>
+                  <button style={{gap: "10px"}} onClick={() => setCount(count + 1)}>+</button>
+                  <button onClick={() => setCount(count - 1)}>-</button>
+            </div>
+      ); 
 }
 
 export default App
