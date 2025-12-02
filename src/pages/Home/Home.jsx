@@ -1,9 +1,12 @@
 import React from 'react'
+import Hero from './components/Hero'
+import Books from './components/Books'
 
 const Home = () => {
   return (
     <div>
-      <h1 className='text-green-500 text-3xl font-bold'>Welcome to the Home Page</h1>
+      <Hero />
+      <Books />
     </div>
   )
 }

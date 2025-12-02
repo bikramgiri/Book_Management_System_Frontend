@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 
 // Child component for session-dependent rendering
 const AuthSection = () => {
-  const { data: user } = useSelector((state) => state.auth);
+  const user = "";
+  // const { data: user } = useSelector((state) => state.auth);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = React.createRef();
 
@@ -235,11 +235,11 @@ const AuthSection = () => {
 
 // Child component for mobile auth section
 const MobileAuthSection = () => {
-   const { data: user } = useSelector((state) => state.auth);
+   const user = "ram";
 
-  if (status === "loading") {
-    return null;
-  }
+  // if (status === "loading") {
+  //   return null;
+  // }
 
 //   const handleSignOut = async () => {
 //     await signOut({ callbackUrl: "/auth/login" });
@@ -305,7 +305,7 @@ const Navbar = () => {
   return (
     <>
       <nav className="relative px-4 py-2 flex justify-between items-center bg-white dark:bg-white border-b-2 dark:border-gray-200 shadow-md">
-        <Link to="/" className="text-3xl font-bold dark:text-indigo-600">
+        <Link to="/" className="text-3xl font-bold dark:text-pink-600">
           Book <span className="dark:text-gray-800">Hub</span>
         </Link>
         <div className="lg:hidden">
@@ -359,7 +359,7 @@ const Navbar = () => {
               viewBox="0 0 24 24"
               strokeWidth="1.5"
               stroke="currentColor"
-              className="cursor-pointer w-10 h-10 text-indigo-700 p-1"
+              className="cursor-pointer w-10 h-10 text-pink-700 p-1"
             >
               <path
                 strokeLinecap="round"
@@ -413,9 +413,9 @@ const Navbar = () => {
           <div className="flex items-center mb-8">
             <Link
               to="/"
-              className="mr-auto text-2xl font-bold dark:text-indigo-600"
+              className="mr-auto text-2xl font-bold dark:text-pink-600"
             >
-              Learning <span className="dark:text-gray-800">Hub</span>
+              Book <span className="dark:text-gray-800">Hub</span>
             </Link>
             <button
               className="navbar-close"
