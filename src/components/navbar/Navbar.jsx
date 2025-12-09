@@ -79,6 +79,15 @@ useEffect(() => {
             </div>
           </div>
 
+          <div>
+            <Link
+              to="/addbook"
+              className="px-5 py-2 bg-gradient-to-r from-pink-600 to-purple-600 text-white rounded-full font-medium hover:shadow-xl transition"
+            >
+              Add Book
+            </Link>
+          </div>
+
           {/* Desktop Right Icons */}
           <div className="hidden lg:flex items-center gap-6">
             {/* Cart */}
