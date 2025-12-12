@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { BookOpen, User, Calendar, Sparkles } from "lucide-react";
+import { BACKEND_URL } from "../../../config";
 
 const Books = () => {
   const [books, setBooks] = useState([]);
@@ -8,7 +9,7 @@ const Books = () => {
 
   const fetchBooks = async () => {
     try {
-      const response = await fetch("http://localhost:3000/books");
+      const response = await fetch(`${BACKEND_URL}/books`);
       if (!response.ok) throw new Error("Failed to fetch");
 
       const result = await response.json();

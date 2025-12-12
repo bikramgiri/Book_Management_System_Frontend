@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Upload, BookOpen, Calendar, Hash, User, DollarSign, FileText, X, CheckCircle, AlertCircle, Loader2, ArrowLeft } from "lucide-react";
 import axios from "axios";
+import { BACKEND_URL } from "../../config";
 
 const EditBook = () => {
   const { id } = useParams();
@@ -107,7 +108,7 @@ const EditBook = () => {
     });
 
     try {
-      const response = await axios.patch(`http://localhost:3000/book/${id}`, data, {
+      const response = await axios.patch(`${BACKEND_URL}/book/${id}`, data, {
             headers: {
               "Content-Type": "multipart/form-data"
             }

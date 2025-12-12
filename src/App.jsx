@@ -12,8 +12,8 @@ function App() {
      <Navbar />
       <Routes>
         <Route path='/' element={<Home />} />
-        <Route path='/addbook' element={<AddBook />} />
-        <Route path='/editbook/:id' element={<EditBook />} />
+        <Route path='/add-book' element={<AddBook />} />
+        <Route path='/edit-book/:id' element={<EditBook />} />
         <Route path='/book/:id' element={<SingleBook />} />
       </Routes>
     </BrowserRouter>

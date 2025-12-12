@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Upload, BookOpen, Calendar, Hash, User, DollarSign, FileText, X, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import axios from "axios";
+import { BACKEND_URL } from "../../config";
 
 const AddBook = () => {
   const navigate = useNavigate();
@@ -77,7 +78,7 @@ const AddBook = () => {
     Object.keys(formData).forEach((key) => data.append(key, formData[key])); // Append all form data
 
     try {
-      const response = await axios.post("http://localhost:3000/books", data);
+      const response = await axios.post(`${BACKEND_URL}/books`, data);
 
       const result = await response.data;
 

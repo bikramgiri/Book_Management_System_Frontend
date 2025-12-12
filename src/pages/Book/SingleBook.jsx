@@ -13,6 +13,7 @@ import {
   Loader2,
 } from "lucide-react";
 import axios from "axios";
+import { BACKEND_URL } from "../../config";
 
 const SingleBook = () => {
   const { id } = useParams();
@@ -25,7 +26,7 @@ const SingleBook = () => {
 
   const fetchBook = async () => {
     try {
-      const response = await axios.get(`http://localhost:3000/book/${id}`);
+      const response = await axios.get(`${BACKEND_URL}/book/${id}`);
       if (response.status !== 200) throw new Error("Book not found");
 
       const result = await response.data;
@@ -50,7 +51,7 @@ const SingleBook = () => {
     setErrorMessage("");
 
     try {
-      const response = await axios.delete(`http://localhost:3000/book/${id}`);
+      const response = await axios.delete(`${BACKEND_URL}/book/${id}`);
 
       if (response.status === 200) {
         setSuccessMessage("Book deleted successfully!");
@@ -226,7 +227,7 @@ const SingleBook = () => {
                 {/* Admin Actions */}
                 <div className="flex gap-4 pt-6 border-t border-gray-200">
                   <Link
-                    to={`/editbook/${book._id}`}
+                    to={`/edit-book/${book._id}`}
                     className="flex-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white py-4 rounded-2xl font-bold text-lg hover:shadow-xl transform hover:scale-105 transition text-center flex items-center justify-center gap-3"
                   >
                     <Edit className="w-6 h-6" />
