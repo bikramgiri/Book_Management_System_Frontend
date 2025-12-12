@@ -1,24 +1,38 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Calendar, User, BookOpen, ShoppingCart } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar,
+  User,
+  BookOpen,
+  ShoppingCart,
+  Trash2,
+  Edit,
+  CheckCircle,
+  AlertCircle,
+  Loader2,
+} from "lucide-react";
+import axios from "axios";
 
 const SingleBook = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [book, setBook] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [error, setErrorMessage] = useState("");
 
   const fetchBook = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/book/${id}`);
-      if (!response.ok) throw new Error("Book not found");
+      const response = await axios.get(`http://localhost:3000/book/${id}`);
+      if (response.status !== 200) throw new Error("Book not found");
 
-      const result = await response.json();
-      setBook(result.data); // assuming your API returns { data: { ...book } }
+      const result = await response.data;
+      setBook(result.data);
     } catch (err) {
-      console.error("Error fetching book:", err);
-      setError(true);
+      console.error(err, " Error fetching book details");
+      setErrorMessage("Failed to load book details.");
     } finally {
       setLoading(false);
     }
@@ -28,31 +42,62 @@ const SingleBook = () => {
     fetchBook();
   }, [id]);
 
+  const handleDelete = async () => {
+    // if (!window.confirm("Are you sure you want to delete this book?")) return;
+
+    setDeleting(true);
+    setSuccessMessage("");
+    setErrorMessage("");
+
+    try {
+      const response = await axios.delete(`http://localhost:3000/book/${id}`);
+
+      if (response.status === 200) {
+        setSuccessMessage("Book deleted successfully!");
+        setTimeout(() => {
+          navigate("/");
+        }, 2000);
+      } else {
+        const result = await response.json();
+        setErrorMessage(result.message || "Failed to delete book");
+      }
+    } catch (err) {
+      console.error(err, " Error deleting book");
+      setErrorMessage("Network error. Please try again.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   // Loading State
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-pink-600 mx-auto mb-4"></div>
+          <Loader2 className="w-16 h-16 animate-spin text-pink-600 mx-auto mb-4" />
           <p className="text-xl text-gray-600">Loading book details...</p>
         </div>
       </div>
     );
   }
 
-  // Error State
-  if (error || !book) {
+  // Not Found / Error State
+  if (!book) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center p-10 bg-white rounded-2xl shadow-lg">
-          <div className="text-6xl mb-4">Book Not Found</div>
-          <p className="text-gray-600 mb-8">Sorry, we couldn't find this book.</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50">
+        <div className="text-center p-12 bg-white rounded-3xl shadow-2xl">
+          <AlertCircle className="w-20 h-20 text-red-500 mx-auto mb-6" />
+          <h2 className="text-4xl font-bold text-gray-800 mb-4">
+            Book Not Found
+          </h2>
+          <p className="text-xl text-gray-600 mb-8">
+            Sorry, we couldn't find this book.
+          </p>
           <button
-            onClick={() => navigate(-1)}
-            className="px-8 py-3 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition flex items-center gap-2 mx-auto"
+            onClick={() => navigate("/all-books")}
+            className="px-10 py-4 bg-gradient-to-r from-pink-600 to-purple-600 text-white rounded-full font-bold hover:shadow-xl transform hover:scale-105 transition"
           >
-            <ArrowLeft size={20} />
-            Go Back
+            Back to Books
           </button>
         </div>
       </div>
@@ -60,108 +105,170 @@ const SingleBook = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 py-8 px-4">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 py-12 px-6">
+      <div className="max-w-7xl mx-auto">
         {/* Back Button */}
         <button
           onClick={() => navigate("/")}
-          className="cursor-pointer mb-8 flex items-center gap-2 text-pink-600 hover:text-pink-700 transition font-medium"
+          className="cursor-pointer mb-10 flex items-center gap-3 text-pink-600 hover:text-pink-700 font-semibold text-lg transition"
         >
-          <ArrowLeft size={24} />
+          <ArrowLeft className="w-6 h-6 cursor-pointer" />
           Back to Books
         </button>
 
-        <div className="grid md:grid-cols-2 gap-12 bg-white rounded-3xl shadow-2xl overflow-hidden">
+        {/* Messages */}
+        {/* {successMessage && (
+          <div className="mb-8 flex items-center justify-center gap-4 text-green-600 font-bold text-2xl animate-bounce">
+            <CheckCircle className="w-10 h-10" />
+            {successMessage}
+          </div>
+        )}
+
+        {error && (
+          <div className="mb-8 flex items-center justify-center gap-4 text-red-600 font-semibold text-xl animate-pulse">
+            <AlertCircle className="w-9 h-9" />
+            {error}
+          </div>
+        )} */}
+
+        <div className="grid lg:grid-cols-2 gap-12 bg-white rounded-3xl shadow-2xl overflow-hidden">
           {/* Book Cover */}
-          <div className="relative group">
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition z-10"></div>
+          <div className="relative group overflow-hidden">
             <img
               src={book.bookImage || "/Book.jpg"}
               alt={book.bookName}
-              className="w-full h-full object-cover min-h-[500px] group-hover:scale-105 transition-transform duration-500"
+              className="w-full h-full object-cover min-h-[600px] group-hover:scale-110 transition-transform duration-700"
             />
-            <div className="absolute bottom-0 left-0 right-0 p-8 text-white transform translate-y-8 group-hover:translate-y-0 transition z-20">
-              <p className="text-3xl font-bold drop-shadow-lg">{book.bookName}</p>
-              <p className="text-lg opacity-90">by {book.autherName || book.authorName}</p>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-10">
+              <div className="text-white">
+                <h1 className="text-4xl font-bold mb-2 drop-shadow-2xl">
+                  {book.bookName}
+                </h1>
+                <p className="text-xl opacity-90 mt-2">
+                  by {book.autherName || book.authorName}
+                </p>
+              </div>
             </div>
           </div>
 
           {/* Book Details */}
-          <div className="p-10 flex flex-col justify-between">
-            <div>
-              {/* Category Badge */}
-              <div className="flex justify-between items-start mb-6">
-                <span className="inline-block bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6 py-2 rounded-full text-sm font-semibold shadow-lg">
-                  Technology & Programming
+          <div className="p-10 lg:p-16 flex flex-col">
+            <div className="flex-1">
+              {/* Badge + Price */}
+              <div className="flex justify-between items-start mb-8">
+                <span className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-8 py-3 rounded-full text-lg font-bold shadow-lg">
+                  Premium Edition
                 </span>
-                <span className="text-3xl font-bold text-pink-600">Rs. {book.bookPrice}</span>
+                <span className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600">
+                  Rs. {book.bookPrice}
+                </span>
               </div>
 
-              {/* Title & Author */}
-              <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4 leading-tight">
+              {/* Title */}
+              <h1 className="text-5xl font-extrabold text-gray-800 mb-6 leading-tight">
                 {book.bookName}
               </h1>
-              <div className="flex items-center gap-3 text-gray-600 mb-6">
-                <User size={20} />
-                <span className="text-lg font-medium">
+
+              {/* Author */}
+              <div className="flex items-center gap-4 text-gray-700 mb-8">
+                <User className="w-7 h-7 text-purple-600" />
+                <span className="text-2xl font-medium">
                   {book.autherName || book.authorName || "Unknown Author"}
                 </span>
               </div>
 
+              {/* Metadata */}
+              <div className="grid grid-cols-2 gap-8 mb-12">
+                <div className="bg-gray-50 dark:bg-gray-100 p-6 rounded-2xl">
+                  <p className="text-sm text-gray-600 mb-1">Published Date</p>
+                  <p className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-indigo-600" />
+                    {book.publishedAt
+                      ? new Date(book.publishedAt).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })
+                      : "N/A"}
+                  </p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-100 p-6 rounded-2xl">
+                  <p className="text-sm text-gray-600 mb-1">ISBN</p>
+                  <p className="text-xl font-mono font-bold text-gray-800">
+                    {book.isbnNumber || "N/A"}
+                  </p>
+                </div>
+              </div>
+
               {/* Description */}
-              <div className="mb-8">
-                <h3 className="text-xl font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                  <BookOpen size={24} />
-                  Description
+              <div className="mb-10">
+                <h3 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-3">
+                  <BookOpen className="w-8 h-8 text-pink-600" />
+                  About This Book
                 </h3>
-                <p className="text-gray-700 leading-relaxed text-lg">
-                  {book.bookDescription || "No description available for this book."}
+                <p className="text-gray-700 text-lg leading-relaxed">
+                  {book.bookDescription ||
+                    "No description available for this book."}
                 </p>
               </div>
 
-              {/* Metadata */}
-              <div className="grid grid-cols-2 gap-6 mb-10 text-gray-600">
-                <div className="flex items-center gap-3">
-                  <Calendar size={20} />
-                  <div>
-                    <p className="text-sm text-gray-500">Published</p>
-                    <p className="font-medium">
-                      {book.publishedAt
-                        ? new Date(book.publishedAt).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })
-                        : "Unknown"}
-                    </p>
-                  </div>
+              {/* Action Buttons */}
+              <div className="space-y-4">
+                <div className="flex gap-4">
+                  <button className="cursor-pointer flex-1 bg-gradient-to-r from-pink-600 to-purple-600 text-white py-5 px-10 rounded-2xl font-bold text-xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition flex items-center justify-center gap-4">
+                    <ShoppingCart className="w-8 h-8" />
+                    Add to Cart
+                  </button>
+                  <button className="cursor-pointer px-10 py-5 border-2 border-pink-600 text-pink-600 rounded-2xl font-bold text-xl hover:bg-pink-600 hover:text-white transition">
+                    Read Sample
+                  </button>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="bg-gray-200 border-2 border-dashed rounded-xl w-10 h-10" />
-                  <div>
-                    <p className="text-sm text-gray-500">ISBN</p>
-                    <p className="font-mono font-medium">{book.isbnNumber || "N/A"}</p>
-                  </div>
+                {/* Admin Actions */}
+                <div className="flex gap-4 pt-6 border-t border-gray-200">
+                  <Link
+                    to={`/editbook/${book._id}`}
+                    className="flex-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white py-4 rounded-2xl font-bold text-lg hover:shadow-xl transform hover:scale-105 transition text-center flex items-center justify-center gap-3"
+                  >
+                    <Edit className="w-6 h-6" />
+                    Edit Book
+                  </Link>
+                  <button
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="cursor-pointer flex-1 bg-gradient-to-r from-red-500 to-pink-600 text-white py-4 rounded-2xl font-bold text-lg hover:shadow-xl transform hover:scale-105 transition flex items-center justify-center gap-3 disabled:opacity-70"
+                  >
+                    {deleting ? (
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-6 h-6" />
+                    )}
+                    {deleting ? "Deleting..." : "Delete Book"}
+                  </button>
                 </div>
+                {/* Display book delete successMessage */}
+                <p className="text-green-600 font-semibold text-center mt-4">
+                  {successMessage}
+                </p>
+                {error && (
+                  <div className="mb-8 flex items-center justify-center gap-4 text-red-600 font-semibold text-xl animate-pulse">
+                    <AlertCircle className="w-9 h-9" />
+                    {error}
+                  </div>
+                )}{" "}
+                {error && (
+                  <div className="mb-8 flex items-center justify-center gap-4 text-red-600 font-semibold text-xl animate-pulse">
+                    <AlertCircle className="w-9 h-9" />
+                    {error}
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-4">
-              <button className="flex-1 bg-gradient-to-r from-pink-600 to-purple-600 text-white py-4 px-8 rounded-xl font-bold text-lg hover:shadow-2xl transform hover:scale-105 transition flex items-center justify-center gap-3">
-                <ShoppingCart size={24} />
-                Add to Cart
-              </button>
-              <button className="px-8 py-4 border-2 border-pink-600 text-pink-600 rounded-xl font-bold hover:bg-pink-600 hover:text-white transition">
-                Read Sample
-              </button>
-            </div>
+            {/* Book ID Footer */}
+            <p className="text-center text-gray-500 mt-12 text-sm">
+              Book ID: <span className="font-mono">{book._id}</span>
+            </p>
           </div>
-        </div>
-
-        {/* Footer Note */}
-        <div className="text-center mt-16 text-gray-500">
-          <p>Book ID: {book._id}</p>
         </div>
       </div>
     </div>

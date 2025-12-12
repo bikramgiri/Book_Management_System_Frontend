@@ -12,7 +12,7 @@ const Hero = () => {
         <div className="absolute -bottom-8 left-20 w-80 h-80 bg-pink-400 rounded-full mix-blend-multiply filter blur-3xl opacity-60 animate-blob animation-delay-4000"></div>
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-6 py-24 lg:py-0">
+      <div className="relative max-w-8xl mx-auto px-6 py-24 lg:py-0">
         <div className="grid lg:grid-cols-2 gap-23 items-center">
           {/* Left Content */}
           <div className="text-center lg:text-left space-y-6">

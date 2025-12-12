@@ -74,7 +74,7 @@ const Books = () => {
 
   return (
     <section className="py-16 px-6 bg-gradient-to-b from-purple-50 via-pink-50 to-blue-50">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-8xl mx-auto">
         {/* Section Header */}
         <div className="text-center mb-16">
           <div className="flex items-center justify-center gap-3 mb-4">
@@ -89,7 +89,7 @@ const Books = () => {
         </div>
 
         {/* Books Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {books.map((book, index) => (
             <div
               key={book._id}

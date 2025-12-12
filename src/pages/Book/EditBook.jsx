@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Upload, BookOpen, Calendar, Hash, User, DollarSign, FileText, X, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Upload, BookOpen, Calendar, Hash, User, DollarSign, FileText, X, CheckCircle, AlertCircle, Loader2, ArrowLeft } from "lucide-react";
 import axios from "axios";
 
-const AddBook = () => {
+const EditBook = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [imagePreview, setImagePreview] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [imagePreview, setImagePreview] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
+  const [, setErrorMessage] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
 
   const [formData, setFormData] = useState({
@@ -19,141 +21,170 @@ const AddBook = () => {
     isbnNumber: "",
     publication: "",
     publishedAt: "",
-    bookImage: null,
+    bookImage: null, // new file if changed
   });
 
+  // Fetch book data on mount
   useEffect(() => {
-    if (successMessage || errorMessage) {
-      const timer = setTimeout(() => {
-        setSuccessMessage("");
-        setErrorMessage("");
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [successMessage, errorMessage]);
+    const fetchBook = async () => {
+      try {
+        const response = await fetch(`http://localhost:3000/book/${id}`);
+        if (!response.ok) throw new Error("Book not found");
+
+        const result = await response.json();
+        const book = result.data;
+
+        setFormData({
+          bookName: book.bookName || "",
+          bookPrice: book.bookPrice || "",
+          authorName: book.authorName || book.autherName || "",
+          bookDescription: book.bookDescription || "",
+          isbnNumber: book.isbnNumber || "",
+          publication: book.publication || "",
+          publishedAt: book.publishedAt ? book.publishedAt.split("T")[0] : "",
+          bookImage: null,
+        });
+
+        setImagePreview(book.bookImage || "/Book.jpg");
+      } catch (err) {
+        console.error(err, "Error fetching book data");
+        setErrorMessage("Failed to load book data.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) fetchBook();
+  }, [id]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    setFieldErrors((prev) => ({ ...prev, [name]: "" })); 
+    setFormData(prev => ({ ...prev, [name]: value }));
+    setFieldErrors(prev => ({ ...prev, [name]: "" }));
   };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setFormData((prev) => ({ ...prev, bookImage: file }));
-      const reader = new FileReader(); 
+      setFormData(prev => ({ ...prev, bookImage: file }));
+      const reader = new FileReader();
       reader.onloadend = () => setImagePreview(reader.result);
       reader.readAsDataURL(file);
     }
   };
 
   const validateForm = () => {
+    {
     const errors = {};
 
-    if (!formData.bookImage) errors.image = "Please upload a book cover image";
-    if (formData.bookName.length < 2) errors.bookName = "Book title must be at least 2 characters long.";
-    if (!formData.bookPrice || parseFloat(formData.bookPrice) <= 0) errors.bookPrice = "Price must be a positive number.";
-    if (formData.authorName.length < 3) errors.authorName = "Author name must be at least 3 characters long";
-    if (formData.bookDescription.length < 5) errors.bookDescription = "Description must be at least 5 characters long.";
-    if (!/^\d{13,}$/.test(formData.isbnNumber)) errors.isbnNumber = "ISBN must be at least 13 digits";
+    if (formData.bookName.length < 2) errors.bookName = "Book title must be at least 2 characters";
+    if (!formData.bookPrice || parseFloat(formData.bookPrice) <= 0) errors.bookPrice = "Price must be positive";
+    if (formData.authorName.length < 3) errors.authorName = "Author name must be at least 3 characters";
+    if (formData.bookDescription.length < 5) errors.bookDescription = "Description must be at least 5 characters";
+    if (!/^\d{13,}$/.test(formData.isbnNumber)) errors.isbnNumber = "ISBN must be 13+ digits";
     if (!formData.publication) errors.publication = "Publication is required";
     if (!formData.publishedAt) errors.publishedAt = "Published date is required";
 
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
   };
+}
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!validateForm()) return;
 
-    setLoading(true);
+    setSubmitting(true);
     setSuccessMessage("");
     setErrorMessage("");
 
     const data = new FormData();
-    Object.keys(formData).forEach((key) => data.append(key, formData[key])); // Append all form data
+    // Only append fields that changed or always needed
+    Object.keys(formData).forEach(key => {
+      if (formData[key] !== null && formData[key] !== "") {
+        data.append(key, formData[key]);
+      }
+    });
 
     try {
-      const response = await axios.post("http://localhost:3000/books", data);
+      const response = await axios.patch(`http://localhost:3000/book/${id}`, data, {
+            headers: {
+              "Content-Type": "multipart/form-data"
+            }
+      });
 
-      const result = await response.data;
-
-      if (response.status === 201) {
-        setSuccessMessage("Book Added Successfully!");
-        
-        // Reset form
-        setFormData({
-          bookName: "",
-          bookPrice: "",
-          authorName: "",
-          bookDescription: "",
-          isbnNumber: "",
-          publication: "",
-          publishedAt: "",
-          bookImage: null,
-        });
-        setImagePreview(null);
-        setFieldErrors({});
-
-        setTimeout(() => navigate("/all-books"), 3000);
-      } else {
-        setErrorMessage(result.message || "Failed to add book");
+      if (response.status === 200) {
+        setSuccessMessage("Book updated successfully!");
+        setTimeout(() => navigate(`/book/${id}`), 2000);
       }
     } catch (err) {
-      console.error("Error adding book:", err);
-      const msg = err.response?.data?.message || err.message || "Network error. Please try again.";
+      const msg = err.response?.data?.message || err.message || "Failed to update book";
       setErrorMessage(msg);
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50">
+        <div className="text-center">
+          <Loader2 className="w-16 h-16 animate-spin text-pink-600 mx-auto mb-4" />
+          <p className="text-xl text-gray-600">Loading book...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 py-12 px-6">
       <div className="max-w-4xl mx-auto">
+        {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent mb-4">
-            Add New Book
+            Edit Book
           </h1>
-          <p className="text-xl text-gray-600">Share your favorite books with the world</p>
+          <p className="text-xl text-gray-600">Update book details</p>
           <div className="w-32 h-1 bg-gradient-to-r from-pink-500 to-purple-600 mx-auto mt-6 rounded-full"></div>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-white rounded-3xl shadow-2xl p-10 space-y-8">
+          {/* Back Button */}
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="cursor-pointer flex items-center gap-2 text-pink-600 hover:text-pink-700 font-semibold mb-6"
+          >
+            <ArrowLeft className="w-6 h-6" />
+            Back
+          </button>
+
           {/* Image Upload */}
           <div className="flex flex-col items-center">
             <label className="block text-2xl font-bold text-gray-800 mb-6">Book Cover</label>
             <div className="relative group">
-              {imagePreview ? (
-                <div className="relative">
-                  <img src={imagePreview} alt="Preview" className="w-180 h-100 object-cover rounded-2xl shadow-xl" />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setImagePreview(null);
-                      setFormData((prev) => ({ ...prev, bookImage: null }));
-                    }}
-                    className="absolute top-4 right-4 bg-red-500 text-white p-3 rounded-full hover:bg-red-600 transition"
-                  >
-                    <X className="w-6 h-6 cursor-pointer" />
-                  </button>
+              <img
+                src={imagePreview}
+                alt="Current cover"
+                className="w-180 h-100 object-cover rounded-2xl shadow-xl"
+              />
+              <label
+                htmlFor="newImage"
+                className="absolute inset-0 bg-black/50 backdrop-blur-sm rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer"
+              >
+                <div className="text-white text-center">
+                  <Upload className="w-12 h-12 mx-auto mb-2" />
+                  <p className="font-bold">Change Image</p>
                 </div>
-              ) : (
-                <label
-                  htmlFor="bookImage"
-                  className="cursor-pointer w-180 h-100 bg-gradient-to-br from-gray-100 to-gray-200 border-4 border-dashed border-gray-400 rounded-2xl flex flex-col items-center justify-center hover:border-purple-500 transition-all group"
-                >
-                  <Upload className="w-20 h-20 text-gray-400 group-hover:text-purple-600 transition" />
-                  <p className="mt-4 text-xl font-semibold text-gray-600">Click to upload cover</p>
-                  <p className="text-sm text-gray-500 mt-2">JPG, PNG up to 10MB</p>
-                  <input id="bookImage" type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
-                </label>
-              )}
+                <input
+                  id="newImage"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                />
+              </label>
             </div>
-            {fieldErrors.image && <p className="text-red-600 text-sm mt-2">{fieldErrors.image}</p>}
           </div>
 
           {/* Form Grid */}
@@ -201,7 +232,6 @@ const AddBook = () => {
                 value={formData.authorName}
                 onChange={handleInputChange}
                 className="w-full px-6 py-4 rounded-xl border focus:ring-4 focus:ring-blue-500/20 outline-none transition"
-                placeholder="Enter author name"
               />
               {fieldErrors.authorName && <p className="text-red-600 text-sm mt-2">{fieldErrors.authorName}</p>}
             </div>
@@ -217,7 +247,6 @@ const AddBook = () => {
                 value={formData.isbnNumber}
                 onChange={handleInputChange}
                 className="w-full px-6 py-4 rounded-xl border focus:ring-4 focus:ring-orange-500/20 outline-none transition"
-                placeholder="9780134190440"
               />
               {fieldErrors.isbnNumber && <p className="text-red-600 text-sm mt-2">{fieldErrors.isbnNumber}</p>}
             </div>
@@ -233,7 +262,6 @@ const AddBook = () => {
                 value={formData.publication}
                 onChange={handleInputChange}
                 className="w-full px-6 py-4 rounded-xl border focus:ring-4 focus:ring-pink-500/20 outline-none transition"
-                placeholder="e.g., Nepali, English"
               />
               {fieldErrors.publication && <p className="text-red-600 text-sm mt-2">{fieldErrors.publication}</p>}
             </div>
@@ -265,54 +293,57 @@ const AddBook = () => {
               onChange={handleInputChange}
               rows="6"
               className="w-full px-6 py-4 rounded-xl border focus:ring-4 focus:ring-purple-500/20 outline-none transition resize-none"
-              placeholder="Write a compelling description..."
+              placeholder="Update description..."
             />
             {fieldErrors.bookDescription && <p className="text-red-600 text-sm mt-2">{fieldErrors.bookDescription}</p>}
           </div>
 
-          {/* Submit Button + Messages */}
+          {/* Submit Button */}
           <div className="flex flex-col items-center pt-8 space-y-6">
             <button
               type="submit"
-              disabled={loading}
+              disabled={submitting}
               className="cursor-pointer group relative inline-flex items-center gap-4 bg-gradient-to-r from-pink-600 to-purple-600 text-white px-12 py-5 rounded-full text-xl font-bold shadow-2xl hover:shadow-pink-500/50 transform hover:scale-105 transition-all duration-300 disabled:opacity-70"
             >
-              {loading ? (
+              {submitting ? (
                 <>
                   <Loader2 className="w-6 h-6 animate-spin" />
-                  Adding Book...
+                  Updating Book...
                 </>
               ) : (
                 <>
                   <BookOpen className="w-7 h-7" />
-                  Add Book to Library
+                  Update Book
                   <span className="absolute -top-2 -right-2 bg-yellow-400 text-black text-xs font-bold px-3 py-1 rounded-full animate-pulse">
-                    New
+                    Edit
                   </span>
                 </>
               )}
             </button>
 
-            {/* Success Message Below Button */}
+            {/* Success Message */}
             {successMessage && (
-              <div className="flex items-center gap-3 text-green-600 font-bold text-xl animate-bounce">
-                <CheckCircle className="w-8 h-8" />
+              <div className="flex items-center gap-3 text-green-600 font-bold text-2xl animate-bounce">
+                <CheckCircle className="w-10 h-10" />
                 {successMessage}
               </div>
             )}
 
-            {/* Backend Error Message */}
-            {errorMessage && (
-              <div className="flex items-center gap-3 text-red-600 font-semibold text-lg animate-pulse">
-                <AlertCircle className="w-7 h-7" />
+            {/* Error Message */}
+            {/* {errorMessage && (
+              <div className="flex items-center gap-3 text-red-600 font-semibold text-xl animate-pulse">
+                <AlertCircle className="w-9 h-9" />
                 {errorMessage}
               </div>
-            )}
+            )} */}
           </div>
+          {/* <p className="text-green-600 font-semibold text-center mt-4">
+            {successMessage}
+          </p> */}
         </form>
       </div>
     </div>
   );
 };
 
-export default AddBook;
+export default EditBook;
